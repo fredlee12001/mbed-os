@@ -514,8 +514,11 @@ static void rda_get_macaddr_from_flash(unsigned char *macaddr)
     }
     memcpy(macaddr, rda_mac_addr, 6);
 }
+
+#define MAC_SIZE  6
 void mbed_mac_address(char *mac)
 {
+#if (!defined MBED_CONF_APP_MAC_ON_FLASH) || (!defined MBED_CONF_APP_DEVELOPER_MODE)
     mac[0] = 0xD6;
     mac[1] = 0x71;
     mac[2] = 0x36;
@@ -526,5 +529,30 @@ void mbed_mac_address(char *mac)
 #else
     mac[5] = 0xF3;
 #endif
+
+#else
+    int ret;
+    if (!mac_is_valid((char *)rda_mac_addr)) {
+        ret = rda5981_read_flash(MBED_CONF_APP_MAC_ON_FLASH,rda_mac_addr,MAC_SIZE);
+        if ((ret!=0) || (is_available_mac_addr(rda_mac_addr)==0)) {
+#if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
+#warning  "ALT"
+            unsigned int out_len;
+            ret = mbedtls_hardware_poll(NULL, rda_mac_addr, MAC_SIZE, &out_len);
+            if (6 != out_len) {
+                LWIP_DEBUGF(NETIF_DEBUG, ("out_len err:%d\n", out_len));
+            }
+#else
+            ret = rda_trng_get_bytes(rda_mac_addr, MAC_SIZE);
+#endif
+            rda_mac_addr[0] &= 0xfe;    /* clear multicast bit */
+            rda_mac_addr[0] |= 0x02;    /* set local assignment bit (IEEE802) */
+
+            rda5981_write_flash(MBED_CONF_APP_MAC_ON_FLASH,rda_mac_addr,MAC_SIZE);
+        }
+    }
+    memcpy(mac, rda_mac_addr, MAC_SIZE);
+#endif
+
     return;
 }
