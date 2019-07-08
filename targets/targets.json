@@ -27,6 +27,10 @@
                 "help": "Default network interface type. Typical options: null, ETHERNET, WIFI, CELLULAR, MESH",
                 "value": null
             },
+            "network-alt-interface-type": {
+                "help": "Alternative network interface type. Typical options: null, ETHERNET, WIFI, CELLULAR, MESH",
+                "value": null
+            },
             "deep-sleep-latency": {
                 "help": "Time in ms required to go to and wake up from deep sleep (max 10)",
                 "value": 0
