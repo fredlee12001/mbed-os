@@ -171,7 +171,7 @@ void AT_CellularNetwork::urc_cgreg()
 void AT_CellularNetwork::call_network_cb(nsapi_connection_status_t status)
 {
     if (_connection_status_cb) {
-        _connection_status_cb(NSAPI_EVENT_CONNECTION_STATUS_CHANGE, _connect_status);
+        _connection_status_cb(NSAPI_EVENT_CONNECTION_STATUS_CHANGE, status);
     }
 }
 

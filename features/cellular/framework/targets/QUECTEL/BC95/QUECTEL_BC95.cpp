@@ -94,6 +94,10 @@ nsapi_error_t QUECTEL_BC95::init()
     _at->write_int(1);
     _at->cmd_stop_read_resp();
 
+    _at->cmd_start("AT+NCONFIG=AUTOCONNECT,"); // Enable auto connect
+    _at->write_string("TRUE",false);
+    _at->cmd_stop_read_resp();
+
     return _at->unlock_return_error();
 }
 

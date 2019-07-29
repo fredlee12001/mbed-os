@@ -546,7 +546,7 @@ bool CellularStateMachine::get_current_status(CellularStateMachine::CellularStat
 void CellularStateMachine::event()
 {
     // Don't send Signal quality when in signal quality state or it can confuse callback functions when running retry logic
-    if (_state != STATE_SIGNAL_QUALITY) {
+    if (_state != STATE_SIGNAL_QUALITY && _state != STATE_INIT) {
         _cb_data.error = _network.get_signal_quality(_signal_quality.rssi, &_signal_quality.ber);
         _cb_data.data = &_signal_quality;
 
