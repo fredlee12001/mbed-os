@@ -210,7 +210,7 @@ int rda_ccfg_boot(void)
         rda_ccfg_pdi2c();
     }
     /*close usb polling*/
-    RDA_GPIO->CTRL &= ~(0x01UL << 12);
+    //RDA_GPIO->CTRL &= ~(0x01UL << 12);
     rda_ccfg_ck();
     /* Set flash clock */
     rda_ccfg_spifck();
