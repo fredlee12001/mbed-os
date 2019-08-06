@@ -24,6 +24,10 @@
         "provide-default": {
             "help": "Provide as default CellularDevice [true/false]",
             "value": false
-        }
+        },
+	"rst_pin": {
+	    "help": "Reset Pin for BC95, default NC",
+	    "value": "NC"
+	}
     }
 }

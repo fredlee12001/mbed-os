@@ -143,6 +143,13 @@ void AT_CellularNetwork::read_reg_params_and_compare(RegistrationType type)
                     }
                 }
             }
+            else if(reg_params._status == RegisteredHomeNetwork) { //auto recover from dropped status
+                if (previous_registration_status == NotRegistered ) {
+                    if (type != C_REG) {// we are interested only if we recover from packet network
+                        _connection_status_cb(NSAPI_EVENT_CONNECTION_STATUS_CHANGE, NSAPI_STATUS_GLOBAL_UP);
+                    }
+                }
+            }
         }
         if (reg_params._cell_id != -1 && reg_params._cell_id != _reg_params._cell_id) {
             _reg_params._cell_id = reg_params._cell_id;

@@ -20,13 +20,21 @@
 #include "QUECTEL_BC95_CellularInformation.h"
 #include "QUECTEL_BC95.h"
 #include "CellularLog.h"
+#include "rtos/ThisThread.h"
 
 #define CONNECT_DELIM         "\r\n"
 #define CONNECT_BUFFER_SIZE   (1280 + 80 + 80) // AT response + sscanf format
 #define CONNECT_TIMEOUT       8000
 
+#if !defined(MBED_CONF_QUECTEL_BC95_RST_PIN)
+#define MBED_CONF_QUECTEL_BC95_RST_PIN    NC
+#endif
+
+
 using namespace events;
 using namespace mbed;
+using namespace rtos;
+
 
 static const intptr_t cellular_properties[AT_CellularBase::PROPERTY_MAX] = {
     AT_CellularNetwork::RegistrationModeLAC,        // C_EREG
@@ -46,10 +54,60 @@ static const intptr_t cellular_properties[AT_CellularBase::PROPERTY_MAX] = {
     0,  // PROPERTY_AT_CGEREP
 };
 
-QUECTEL_BC95::QUECTEL_BC95(FileHandle *fh) : AT_CellularDevice(fh)
+QUECTEL_BC95::QUECTEL_BC95(FileHandle *fh) : AT_CellularDevice(fh), _rst(NC)
 {
     AT_CellularBase::set_cellular_properties(cellular_properties);
 }
+
+QUECTEL_BC95::QUECTEL_BC95(FileHandle *fh, PinName rst) : AT_CellularDevice(fh), _rst(rst,true)
+{
+    _at->set_urc_handler("REBOOT_CAUSE",  mbed::Callback<void()>(this, &QUECTEL_BC95::modem_reset));
+
+    AT_CellularBase::set_cellular_properties(cellular_properties);
+}
+
+void QUECTEL_BC95::modem_reset()
+{
+    _at->consume_to_stop_tag();
+    tr_info("Modem reboot by other reason");
+    cell_callback_data_t data;
+    data.error = NSAPI_ERROR_OK;
+    cellular_callback(NSAPI_EVENT_CELLULAR_STATUS_END, (intptr_t)&data);
+}
+
+nsapi_error_t QUECTEL_BC95::shutdown()
+{
+    tr_info("BC95 Modem shutdown");
+
+    _at->lock();
+    CellularDevice::shutdown();
+    //CFUN=0 will makes BC95 not working. so skip it here.
+    return _at->unlock_return_error();
+}
+
+
+nsapi_error_t QUECTEL_BC95::hard_power_on()
+{
+    if (!_rst.is_connected()) {
+        return NSAPI_ERROR_OK;
+    }
+
+    tr_info("Power on modem");
+    _rst = false;
+    ThisThread::sleep_for(100);
+    _rst = true;
+    ThisThread::sleep_for(535); //
+
+    // wait for Cheerzing
+    _at->lock();
+    _at->set_at_timeout(5 * 1000);
+    _at->resp_start();
+    _at->consume_to_stop_tag(); //Find 1st reboot OK
+    _at->restore_at_timeout();
+
+    return _at->unlock_return_error();
+}
+
 
 nsapi_error_t QUECTEL_BC95::get_sim_state(SimState &state)
 {
@@ -94,6 +152,12 @@ nsapi_error_t QUECTEL_BC95::init()
     _at->write_int(1);
     _at->cmd_stop_read_resp();
 
+    _at->set_at_timeout(10 * 1000);
+    _at->cmd_start("AT+CFUN="); // CFUN=1
+    _at->write_int(1);
+    _at->cmd_stop_read_resp();
+    _at->restore_at_timeout();
+
     _at->cmd_start("AT+NCONFIG=AUTOCONNECT,"); // Enable auto connect
     _at->write_string("TRUE",false);
     _at->cmd_stop_read_resp();
@@ -110,7 +174,7 @@ CellularDevice *CellularDevice::get_default_instance()
     tr_debug("QUECTEL_BC95 flow control: RTS %d CTS %d", MBED_CONF_QUECTEL_BC95_RTS, MBED_CONF_QUECTEL_BC95_CTS);
     serial.set_flow_control(SerialBase::RTSCTS, MBED_CONF_QUECTEL_BC95_RTS, MBED_CONF_QUECTEL_BC95_CTS);
 #endif
-    static QUECTEL_BC95 device(&serial);
+    static QUECTEL_BC95 device(&serial,MBED_CONF_QUECTEL_BC95_RST_PIN);
     return &device;
 }
 #endif
