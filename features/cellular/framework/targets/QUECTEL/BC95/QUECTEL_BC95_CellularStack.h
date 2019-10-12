@@ -29,6 +29,11 @@ public:
     QUECTEL_BC95_CellularStack(ATHandler &atHandler, int cid, nsapi_ip_stack_t stack_type);
     virtual ~QUECTEL_BC95_CellularStack();
 
+public: // NetworkStack
+
+    virtual const char *get_ip_address();
+
+
 protected: // NetworkStack
 
     virtual nsapi_error_t socket_listen(nsapi_socket_t handle, int backlog);

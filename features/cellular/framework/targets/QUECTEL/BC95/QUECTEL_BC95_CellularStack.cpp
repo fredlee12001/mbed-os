@@ -36,6 +36,44 @@ QUECTEL_BC95_CellularStack::~QUECTEL_BC95_CellularStack()
     _at.set_urc_handler("+NSOCLI:", NULL);
 }
 
+const char *QUECTEL_BC95_CellularStack::get_ip_address()
+{
+    _at.lock();
+
+    _at.cmd_start("AT+CGPADDR");
+    _at.cmd_stop();
+
+    _at.resp_start("+CGPADDR:");
+
+    if (_at.info_resp()) {
+        
+        _at.skip_param();
+        
+        int len = _at.read_string(_ip, NSAPI_IPv4_SIZE);
+        if (len == -1) {
+            _ip[0] = '\0';
+            _at.resp_stop();
+            _at.unlock();
+            // no IPV4 address, return
+            return NULL;
+        }
+
+        // in case stack type is not IPV4 only, try to look also for IPV6 address
+        if (_stack_type != IPV4_STACK) {
+            (void)_at.read_string(_ip, PDP_IPV6_SIZE);
+        }
+    }
+
+    _at.resp_stop();
+    _at.unlock();
+
+    // we have at least IPV4 address
+    convert_ipv6(_ip);
+
+    return _ip;
+}
+
+
 nsapi_error_t QUECTEL_BC95_CellularStack::socket_listen(nsapi_socket_t handle, int backlog)
 {
     return NSAPI_ERROR_UNSUPPORTED;
