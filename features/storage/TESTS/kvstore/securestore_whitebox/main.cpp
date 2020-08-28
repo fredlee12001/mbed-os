@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <algorithm>
 
-#if (!defined(TARGET_K64F) && !defined(TARGET_ARM_FM)) && !defined(TARGET_MCU_PSOC6) || !SECURESTORE_ENABLED
+#if !SECURESTORE_ENABLED
 #error [NOT_SUPPORTED] Kvstore API tests run only on K64F devices, Fastmodels, and PSoC 6. KVStore & SecureStore need to be enabled for this test
 #else
 

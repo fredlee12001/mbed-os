@@ -32,7 +32,7 @@
 using namespace utest::v1;
 using namespace mbed;
 
-#if !defined(TARGET_K64F) && !defined(TARGET_ARM_FM) && !defined(TARGET_MCU_PSOC6)
+#if 0 //Hard Enable for RT1050 Test
 #error [NOT_SUPPORTED] Kvstore API tests run only on K64F devices, Fastmodels, and PSoC 6
 #else
 
@@ -823,7 +823,7 @@ utest::v1::status_t greentea_test_setup(const size_t number_of_cases)
 
 int main()
 {
-    GREENTEA_SETUP(3000, "default_auto");
+    GREENTEA_SETUP(120, "default_auto");
 
     // Don't even start if conditions aren't appropriate for test run
     uint8_t *dummy = new (std::nothrow) uint8_t[heap_alloc_threshold_size];
